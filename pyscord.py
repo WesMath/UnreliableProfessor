@@ -71,21 +71,36 @@ It's Raining Men! Hallelujah!"""
             time.sleep(1)#For dramatic effect
     elif contains(message.content, "Markov"):
         user = message.author#Will eventually split/generalize into user-specific and channel aggregate
+        args = message.content.split("Markov")
+        if len(args) > 1:
+            txtuser = args[1][1::]#strip whitespace
+            for u in the_server.members:
+                if u.name == txtuser:
+                    user = u
         for chan in the_server.channels:
             if chan.name == "help_corner":
                 the_channel = chan
         markov = {"BEG_TOKEN":[]}
         count = 0
-        async for mess in client.logs_from(the_channel, limit=500):
+        async for mess in client.logs_from(the_channel, limit=1000):
             if mess.author.id == user.id:
                 count += 1
-                print(mess.content)
-                split = mess.content.split()
-                markov["BEG_TOKEN"].append(split[0]) 
+                try:
+                    print(mess.content)
+                except UnicodeEncodeError:
+                    continue
+                split = mess.content.split(" ")
+                if "<@" not in split[0]:
+                    markov["BEG_TOKEN"].append(split[0])
+                else:
+                    try:
+                        markov["BEG_TOKEN"].append(split[1])
+                    except:
+                        continue
                 for i in range(len(split)-1):
-                    if split[i] not in markov:
+                    if split[i] not in markov and "<@" not in split[i]:
                         markov[split[i]] = [split[i+1]]
-                    else:
+                    elif "<@" not in split[i]:
                         markov[split[i]].append(split[i+1])
                 if split[len(split) - 1] not in markov:
                         markov[split[len(split) - 1]] = ["END_TOKEN"]
@@ -102,7 +117,7 @@ It's Raining Men! Hallelujah!"""
             next_word = markov[next_word][randChooser]
         await client.send_message(message.channel, output)
     elif contains(message.content, "!ebook"):
-        await client.send_message(message.channel, "I have received your request, Kapusta")
+        await client.send_message(message.channel, "I have received your request, {}".format(message.author.name))
         """r = requests.get("http://www.packtpub.com/packt/offers/free-learning")
         data = r.text
         print(data)"""
@@ -189,8 +204,8 @@ It's Raining Men! Hallelujah!"""
 Lets you know if I'm accepting commands
 *@It'sRainingMen go away for now*
 Currently a broken(?) command to shut down the bot. I'll be removing this soon
-*@It'sRainingMen Markov*
-Takes messages you've sent recently in #help_corner and generates new text. No error handling, so it will probably crash if you're not active there.
+*@It'sRainingMen Markov <username>*
+Takes messages sent recently in #help_corner and generates new text from <username> (defaults to self). No error handling, so it will probably crash if you're not active there.
 *@It'sRainingMen !ebook*
 Posts packt's free ebook of the day and how many hours you have left to claim it
 *@It'sRainingMen search <pageNumber> <regex>*
