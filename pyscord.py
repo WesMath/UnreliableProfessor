@@ -132,14 +132,15 @@ It's Raining Men! Hallelujah!"""
         soup = BeautifulSoup(page, "lxml")
         for title in soup.find_all('h2', limit=1):
             #print(title.getText())
-            output = "The book of the day is:\n```             " + title.getText()+"```"
+            output = "The book of the day is:\n__**" + title.getText()+"**__"
             now = datetime.datetime.now()
             t = datetime.timedelta(hours=18)
             nowdelta = datetime.timedelta(hours=now.hour)
             delta = t - nowdelta
             secs = delta.total_seconds()
+            print("The time between now and 6 in hours has been {}".format(secs / 3600))
             hours = (secs / 3600) % 24
-            time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(hours)
+            time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+3).strip(".0"))#+3 for server correction
             await client.send_message(message.channel, output)
             await client.send_message(message.channel, time_remaining)
     elif contains(message.content, "search"):
@@ -147,14 +148,14 @@ It's Raining Men! Hallelujah!"""
         print(message.content.split("search")[1][1::])
         desired_search = "%" + message.content.split("search")[1][1::]+ "%"
         try:
-            print("spaced out is {}".format(spaced_out))
+            #print("spaced out is {}".format(spaced_out))
             pageNum = int(spaced_out) - 1
-            print("int casting succeeded")
+            #print("int casting succeeded")
             desired_search = "%"+desired_search.split(" ", 1)[1]
             max_num = (pageNum * 10) + 9
             resultCount = pageNum * 10
         except ValueError:
-            print("int casting failed")
+            #print("int casting failed")
             max_num = 9
             resultCount = 0
             pageNum = 0
@@ -162,7 +163,7 @@ It's Raining Men! Hallelujah!"""
         conn = sqlite3.connect("bookdb.sqlite")#Keep all information about database hidden, since incoming requests aren't sanitized- can't trust a server with pentesters on it
         conn.create_function("valid", 2, valid)#create ability to regex check entries
         c = conn.cursor()
-        print(desired_search)
+        #print(desired_search)
         """c.execute("SELECT * FROM CompSciBooks WHERE name LIKE ?", (desired_search,))#Old way of searching using rudimentary string matching
         all_rows = c.fetchall()
         print(all_rows)"""
@@ -180,7 +181,7 @@ It's Raining Men! Hallelujah!"""
         print("desired search term is {}".format(desire))
         c.execute("SELECT * FROM CompSciBooks WHERE valid(?, name) = 1", (desire,))
         da_rows = c.fetchall()
-        print(da_rows)
+        #print(da_rows)
         
         """print(len(all_rows), len(da_rows))
         for row in all_rows:
@@ -208,27 +209,14 @@ Lets you know if I'm accepting commands
 Currently a broken(?) command to shut down the bot. I'll be removing this soon
 *@It'sRainingMen Markov <username>*
 Takes messages sent recently in #help_corner and generates new text from <username> (defaults to self). No error handling, so it will probably crash if you're not active there.
-*@It'sRainingMen !ebook*
+*@It'sRainingMen ebook*
 Posts packt's free ebook of the day and how many hours you have left to claim it
 *@It'sRainingMen search <pageNumber> <regex>*
 Retrieves page of ebook search results for specified regex (defaults to first page and basic string search)
 *@It'sRainingMen SING!*
 Grab a chair and listen to me hum a few bars from the Weather Girls""")
 
-                                  
-"""
-BookPenguin: Welcome to BookPengiun, powered by Lenny Remastered!
-
-To search for a book enter !ebooks followed by regex or Regular Expression that represents your desired output.
-Here is an example: !ebooks Java
-
-Books are shown in pages where each page contains a list of 10 items. To see the results of another page, simply precede your regex with a page number.
-Here is an example: !ebooks 3 Java
-
-To see this help menu again, simply enter !ebooks.
-If you have any further questions, don't hesitate to ping @shadow!
-
-Happy Hunting!"""        
+      
 
 key = open('appkey.txt', 'r')#Read API key from text file in directory (which git ignores)
 thekey = key.read()
