@@ -36,14 +36,14 @@ async def on_ready():
     global the_server
     for serv in client.servers:
         the_server = serv
-    print(serv)
+    #print(serv)
 
 @client.event
 async def on_message(message):
     meant_for_bot = False
     for user in message.mentions:
         if user.id == client.user.id:
-            print("Meant for us!")
+            #print("Meant for us!")
             meant_for_bot = True
             break
     if not meant_for_bot:
@@ -52,6 +52,8 @@ async def on_message(message):
 	#print("Message: " + message.content)
     #print("Got here")
 	# test command
+    if contains(message.content, "sneaky"):#So I can run 2 versions at once and only have one reply to me
+        return
     if contains(message.content, "up tonight?"):
 	    await client.send_message(message.channel, "Yes, I am up!")
     elif contains(message.content, "go away for now"):
@@ -106,17 +108,17 @@ It's Raining Men! Hallelujah!"""
                         markov[split[len(split) - 1]] = ["END_TOKEN"]
                 else:
                     markov[split[len(split) - 1]].append("END_TOKEN")
-        print(markov)
-        print(count, len(markov["BEG_TOKEN"]))
+        #print(markov)
+        #print(count, len(markov["BEG_TOKEN"]))
         next_word = markov["BEG_TOKEN"][random.randint(0,len(markov["BEG_TOKEN"])-1)]
         output = ""
         while next_word != "END_TOKEN":
             randChooser = random.randint(0,len(markov[next_word])-1)
-            print(output, randChooser)
+            #print(output, randChooser)
             output += " " + next_word
             next_word = markov[next_word][randChooser]
         await client.send_message(message.channel, output)
-    elif contains(message.content, "!ebook"):
+    elif contains(message.content, "ebook"):
         await client.send_message(message.channel, "I have received your request, {}".format(message.author.name))
         """r = requests.get("http://www.packtpub.com/packt/offers/free-learning")
         data = r.text
@@ -126,11 +128,11 @@ It's Raining Men! Hallelujah!"""
         hdr = {'User-Agent': 'Mozilla/5.0'}
         req = Request(site,headers=hdr)
         page = urlopen(req)
-        print(page)
+        #print(page)
         soup = BeautifulSoup(page, "lxml")
         for title in soup.find_all('h2', limit=1):
-            print(title)
-            output = "The book of the day is:\n" + str(title)
+            #print(title.getText())
+            output = "The book of the day is:\n```             " + title.getText()+"```"
             now = datetime.datetime.now()
             t = datetime.timedelta(hours=18)
             nowdelta = datetime.timedelta(hours=now.hour)
