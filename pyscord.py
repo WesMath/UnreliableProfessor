@@ -7,6 +7,8 @@ import datetime
 import sqlite3
 import math
 import re
+import json
+import urllib.request
 
 
 def contains(somestring, sub):#Helper function to rewrite pieces of code- eventually I won't use contains/in, but for now it'll do
@@ -59,7 +61,7 @@ async def on_message(message):
     elif contains(message.content, "go away for now"):
             await client.send_message(message.channel, "I will return with a vengeance.")
             #client.logout()
-    elif contains(message.content, "SING!"):
+    elif contains(message.content, "SING!") or contains(message.content, "localWeather"):
         lyricsRAW = """Humidity's rising, Barometer's getting low
 According to all sources, the street's the place to go
 Cause tonight for the first time
@@ -70,7 +72,7 @@ It's Raining Men! Hallelujah!"""
         lyrics = lyricsRAW.split('\n')
         for line in lyrics:
             await client.send_message(message.channel, line)
-            time.sleep(1)#For dramatic effect
+            time.sleep(1.2)#For dramatic effect
     elif contains(message.content, "Markov"):
         user = message.author#Will eventually split/generalize into user-specific and channel aggregate
         args = message.content.split("Markov")
@@ -140,7 +142,7 @@ It's Raining Men! Hallelujah!"""
             secs = delta.total_seconds()
             print("The time between now and 6 in hours has been {}".format(secs / 3600))
             hours = (secs / 3600) % 24
-            time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+3).strip(".0"))#+3 for server correction
+            time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+4).strip(".0"))#+3 for server correction
             await client.send_message(message.channel, output)
             await client.send_message(message.channel, time_remaining)
     elif contains(message.content, "search"):
@@ -202,6 +204,24 @@ It's Raining Men! Hallelujah!"""
         await client.send_message(message.channel, "<@310860026816233473> maintains me. Sometimes. When he's in a good mood.")
     elif contains(message.content, "source"):
         await client.send_message(message.channel, "My source code is not stored in a Github repo (yet), so PM <@310860026816233473> for details or code samples.")
+    elif contains(message.content, "weather"):
+        #insert Helsinki weather api
+        key = open('weather_api.txt', 'r')#Read API key from text file in directory
+        with urllib.request.urlopen("http://api.openweathermap.org/data/2.5/weather?q=Helsinki&APPID="+key.read()) as url:
+            data = json.loads(url.read().decode())
+            output = "In Helsinki, "+data['weather'][0]['description']+'.\n'
+            output += "The temperature is "+ str(((9/5)*(float(data['main']['temp'])-273) + 32))[0:4] +" degrees Fahrenheit and {} degrees Celsius.".format(str(float(data['main']['temp'])-273)[0:4])
+            await client.send_message(message.channel, output)
+            await client.send_message(message.channel, "If you'd like to see weather in your local area, type @It'sRainingMen localWeather <your_area>")
+    elif contains(message.content, "poem"):
+        day = datetime.date.today()
+
+        #31 days in a month to prevent overlap
+
+        hashable = day.month*31 + day.day
+
+        await client.send_message(message.channel,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
+        #use coprimes to generate unique nums
     else:#default case for usage
         await client.send_message(message.channel, """*@It'sRainingMen up tonight?*
 Lets you know if I'm accepting commands
