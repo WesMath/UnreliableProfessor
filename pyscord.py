@@ -9,6 +9,7 @@ import math
 import re
 import json
 import urllib.request
+import time
 
 
 def contains(somestring, sub):#Helper function to rewrite pieces of code- eventually I won't use contains/in, but for now it'll do
@@ -135,16 +136,16 @@ It's Raining Men! Hallelujah!"""
         for title in soup.find_all('h2', limit=1):
             #print(title.getText())
             output = "The book of the day is:\n__**" + title.getText()+"**__"
-            now = datetime.datetime.now()
-            t = datetime.timedelta(hours=18)
-            nowdelta = datetime.timedelta(hours=now.hour)
-            delta = t - nowdelta
-            secs = delta.total_seconds()
-            print("The time between now and 6 in hours has been {}".format(secs / 3600))
-            hours = (secs / 3600) % 24
-            time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+4).strip(".0"))#+3 for server correction
-            await client.send_message(message.channel, output)
-            await client.send_message(message.channel, time_remaining)
+        now = datetime.datetime.now()
+        t = datetime.timedelta(hours=18)
+        nowdelta = datetime.timedelta(hours=now.hour)
+        delta = t - nowdelta
+        secs = delta.total_seconds()
+        print("The time between now and 6 in hours has been {}".format(secs / 3600))
+        hours = (secs / 3600) % 24
+        time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+4).strip(".0"))#+3 for server correction
+        await client.send_message(message.channel, output)
+        await client.send_message(message.channel, time_remaining)
     elif contains(message.content, "search"):
         spaced_out = message.content.split("search")[1][1::].split(" ")[0]
         print(message.content.split("search")[1][1::])
@@ -222,6 +223,8 @@ It's Raining Men! Hallelujah!"""
 
         await client.send_message(message.channel,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
         #use coprimes to generate unique nums
+    elif contains(message.content, "server time"):
+        await client.send_message(message.channel, datetime.datetime.now())    
     else:#default case for usage
         await client.send_message(message.channel, """*@It'sRainingMen up tonight?*
 Lets you know if I'm accepting commands
@@ -234,7 +237,9 @@ Posts packt's free ebook of the day and how many hours you have left to claim it
 *@It'sRainingMen search <pageNumber> <regex>*
 Retrieves page of ebook search results for specified regex (defaults to first page and basic string search)
 *@It'sRainingMen SING!*
-Grab a chair and listen to me hum a few bars from the Weather Girls""")
+Grab a chair and listen to me hum a few bars from the Weather Girls
+*@It'sRainingMen poem*
+Fetches custom-selected poem of the day""")
 
       
 
