@@ -44,18 +44,26 @@ async def on_ready():
 @client.event
 async def on_message(message):
     meant_for_bot = False
-    for user in message.mentions:
-        if user.id == client.user.id:
-            #print("Meant for us!")
-            meant_for_bot = True
-            break
+    if message.channel.is_private is False:
+        for user in message.mentions:
+            if user.id == client.user.id:
+                #print("Meant for us!")
+                meant_for_bot = True
+                break
+    elif "RainingMen" not in message.author.name:
+        meant_for_bot = True
+    correct_channel = False
+    if message.channel.is_private is True or message.channel.name in ["bot_spam", "bot_testing"]:
+        correct_channel = True
     if not meant_for_bot:
         #print("Not meant for us...")
         return
 	#print("Message: " + message.content)
     #print("Got here")
-	# test command
-    if contains(message.content, "sneaky"):#So I can run 2 versions at once and only have one reply to me
+    if contains(message.content, "sneakyOBSOLETE"):#So I can run 2 versions at once and only have one reply to me
+        return
+    if not correct_channel:
+        await client.send_message(message.channel, "Please confine all bot interaction to #bot_spam, #bot_testing, or private direct messages to the bot.")
         return
     if contains(message.content, "up tonight?"):
 	    await client.send_message(message.channel, "Yes, I am up!")
@@ -121,11 +129,11 @@ It's Raining Men! Hallelujah!"""
             output += " " + next_word
             next_word = markov[next_word][randChooser]
         await client.send_message(message.channel, output)
-    elif contains(message.content, "ebook"):
+        """elif contains(message.content, "ebook"):
         await client.send_message(message.channel, "I have received your request, {}".format(message.author.name))
-        """r = requests.get("http://www.packtpub.com/packt/offers/free-learning")
+        r = requests.get("http://www.packtpub.com/packt/offers/free-learning")
         data = r.text
-        print(data)"""
+        print(data)
 
         site= "http://www.packtpub.com/packt/offers/free-learning"
         hdr = {'User-Agent': 'Mozilla/5.0'}
@@ -141,11 +149,11 @@ It's Raining Men! Hallelujah!"""
         nowdelta = datetime.timedelta(hours=now.hour)
         delta = t - nowdelta
         secs = delta.total_seconds()
-        print("The time between now and 6 in hours has been {}".format(secs / 3600))
+        #print("The time between now and 6 in hours has been {}".format(secs / 3600))
         hours = (secs / 3600) % 24
-        time_remaining = "You have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours+4).strip(".0"))#+3 for server correction
-        await client.send_message(message.channel, output)
-        await client.send_message(message.channel, time_remaining)
+        time_remaining = "\nYou have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours).strip(".0"))
+        await client.send_message(message.channel, output+time_remaining)
+        await client.send_message(message.channel, time_remaining)"""
     elif contains(message.content, "search"):
         spaced_out = message.content.split("search")[1][1::].split(" ")[0]
         print(message.content.split("search")[1][1::])
@@ -213,8 +221,8 @@ It's Raining Men! Hallelujah!"""
             output = "In Helsinki, "+data['weather'][0]['description']+'.\n'
             output += "The temperature is "+ str(((9/5)*(float(data['main']['temp'])-273) + 32))[0:4] +" degrees Fahrenheit and {} degrees Celsius.".format(str(float(data['main']['temp'])-273)[0:4])
             await client.send_message(message.channel, output)
-            await client.send_message(message.channel, "If you'd like to see weather in your local area, type @It'sRainingMen localWeather <your_area>")
-    elif contains(message.content, "poem"):
+            await client.send_message(message.channel, "If you'd like to see weather in your local area, type @Ozymandias localWeather <your_area>")
+        """elif contains(message.content, "poem"):
         day = datetime.date.today()
 
         #31 days in a month to prevent overlap
@@ -222,24 +230,62 @@ It's Raining Men! Hallelujah!"""
         hashable = day.month*31 + day.day
 
         await client.send_message(message.channel,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
-        #use coprimes to generate unique nums
+        #use coprimes to generate unique nums"""
     elif contains(message.content, "server time"):
-        await client.send_message(message.channel, datetime.datetime.now())    
+        await client.send_message(message.channel, datetime.datetime.now())
+    elif contains(message.content, "subscribe "):
+        desired_sub = message.content.split("subscribe ")[1]
+        conn = sqlite3.connect("subscriptions.sqlite")
+        c = conn.cursor()
+        print("desired sub is " +desired_sub)
+        if desired_sub == "all":
+            if "unsubscribe" not in message.content:
+                c.execute("UPDATE {tn} SET ebook = 1, poem = 1 WHERE id = ?".format(tn="Subscriptions"), (message.author.id,))
+                await client.send_message(message.channel, "Subscribing you to both!")
+            else:
+                c.execute("UPDATE {tn} SET ebook = 0, poem = 0 WHERE id = ?".format(tn="Subscriptions"), (message.author.id,))
+                await client.send_message(message.channel, "Removing you from all subscriptions")
+
+        elif desired_sub == "ebook" or desired_sub == "poem":
+            c.execute("SELECT {sub} from Subscriptions WHERE id = ?".format(sub=desired_sub), (message.author.id,))
+            rows = c.fetchall()
+            val = (int(rows[0][0]) + 1)%2
+            c.execute("UPDATE {tn} SET {sub} = ? WHERE id = ?".format(tn="Subscriptions", sub=desired_sub), (val, message.author.id,))
+            await client.send_message(message.channel,"Changed subscription status {} to ".format(val)+desired_sub)
+        conn.commit()
+        conn.close()
+        """Have a database where rows are user IDs and columns are various types of subscription- default to 0, 1 means tag, 2 means message, 3 means tag and message
+@bot subscribe 2 ebook
+edit row value
+@bot unsubscribe ebook
+edit row value to 0
+
+ebookAnnounced.txt, poemAnnounced.txt
+both contain digits of last date/time announced
+if not within current timeframe, wipe files and replace with current time
+then do tagged message:
+query where user's values for ____ = 1 or 3, then assemble a string
+then do messages:
+query, then look up users by ID, and message
+
+@bot unsubscribe all
+query ID, turn all values to 0
+
+@bot subscribe new or help
+Talks about digit and usage system"""
     else:#default case for usage
-        await client.send_message(message.channel, """*@It'sRainingMen up tonight?*
+        await client.send_message(message.channel, """*@Ozymandias up tonight?*
 Lets you know if I'm accepting commands
-*@It'sRainingMen go away for now*
-Currently a broken(?) command to shut down the bot. I'll be removing this soon
-*@It'sRainingMen Markov <username>*
+*@Ozymandias Markov <username>*
 Takes messages sent recently in #help_corner and generates new text from <username> (defaults to self). No error handling, so it will probably crash if you're not active there.
-*@It'sRainingMen ebook*
-Posts packt's free ebook of the day and how many hours you have left to claim it
-*@It'sRainingMen search <pageNumber> <regex>*
+*@Ozymandias search <pageNumber> <regex>*
 Retrieves page of ebook search results for specified regex (defaults to first page and basic string search)
-*@It'sRainingMen SING!*
+*@Ozymandias SING!*
 Grab a chair and listen to me hum a few bars from the Weather Girls
-*@It'sRainingMen poem*
-Fetches custom-selected poem of the day""")
+*@Ozymandias weather*
+Fetches the current weather outside
+*@Ozymandias (un)subscribe <arg>*
+Signs you up to be tagged (or removes you from the list) for the ebook, poem, or all (use those 3 keywords)""")
 
       
 
