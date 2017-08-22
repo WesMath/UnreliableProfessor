@@ -10,6 +10,9 @@ import re
 import json
 import urllib.request
 import time
+from threading import Thread
+import asyncio
+
 
 
 def contains(somestring, sub):#Helper function to rewrite pieces of code- eventually I won't use contains/in, but for now it'll do
@@ -29,7 +32,86 @@ def valid(regexpr, content):#Custom function defined in SQLite connection to tes
     except Exception as e:#Was for debugging purposes
         print(str(e))
 
+global client
 client = discord.Client()
+
+class subscriptions_thread(Thread):
+    def run(self):
+        while(True):
+            #Sleep after checking time:
+            now = datetime.datetime.now()
+            desired = -1
+            secs = 1
+            if now.hour >= 7 and now.hour < 19:
+                desired = 1 #for ebook
+                t = datetime.timedelta(hours=19)
+                current = datetime.timedelta(hours=now.hour, minutes=now.minute)
+                delta = t - current
+                secs = delta.total_seconds()
+            elif now.hour >= 19 or now.hour < 7:
+                desired = 0 #for poem
+                t = datetime.timedelta(hours=7)
+                current = datetime.timedelta(hours=now.hour, minutes=now.minute)
+                delta = t - current
+                secs = delta.total_seconds()
+                if secs < 0:
+                    secs *= -1
+            else:
+                print("Never should reach here")
+            print("Ready to sleep for {} seconds.".format(secs))
+            time.sleep(secs)
+            #Send out appropriate message
+            for chan in the_server.channels:
+                #print(chan.name)
+                if chan.name == "bot_testing":
+                    print("Found correct channel")
+                    testing = chan
+            conn = sqlite3.connect("subscriptions.sqlite")
+            c = conn.cursor()
+            if desired == 1:
+                c.execute("SELECT id FROM Subscriptions WHERE ebook = 1")
+                da_people = c.fetchall()
+                print(da_people)
+                #await client.send_message(testing, "Here's your ebook")
+                site= "http://www.packtpub.com/packt/offers/free-learning"
+                hdr = {'User-Agent': 'Mozilla/5.0'}
+                req = Request(site,headers=hdr)
+                page = urlopen(req)
+                #print(page)
+                soup = BeautifulSoup(page, "lxml")
+                for title in soup.find_all('h2', limit=1):
+                    #print(title.getText())
+                    output = "The book of the day is:\n__**" + title.getText()+"**__"
+                t = datetime.timedelta(hours=18)
+                nowdelta = datetime.timedelta(hours=now.hour)
+                delta = t - nowdelta
+                secs = delta.total_seconds()
+                #print("The time between now and 6 in hours has been {}".format(secs / 3600))
+                hours = (secs / 3600) % 24
+                time_remaining = "\nYou have less than {} hours remaining to claim this book:\nhttps://www.packtpub.com/packt/offers/free-learning".format(str(hours).strip(".0"))
+                client.send_message(testing, output+time_remaining)
+                output = ""
+                for person in da_people:
+                    output += "<@"+person[0]+">, "
+                client.send_message(testing, output)
+            elif desired == 0:
+                c.execute("SELECT id FROM Subscriptions WHERE poem = 1")
+                da_people = c.fetchall()
+                print(da_people)
+                #await client.send_message(testing, "I got a poem for you- just kidding, this is a placeholder.")
+                day = datetime.date.today()
+                #31 days in a month to prevent overlap
+                hashable = day.month*31 + day.day
+                client.send_message(testing,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
+                #use coprimes to generate unique nums
+                output = ""
+                for person in da_people:
+                    output += "<@"+person[0]+">, "
+                client.send_message(testing, output)
+            c.close()
+
+
+
 
 
 
@@ -40,6 +122,7 @@ async def on_ready():
     for serv in client.servers:
         the_server = serv
     #print(serv)
+    subscriptions_thread().start()
 
 @client.event
 async def on_message(message):
