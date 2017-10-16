@@ -76,7 +76,7 @@ async def subscriptions():
         else:
             print("Never should reach here")
         print("Ready to sleep for {} seconds.".format(secs))
-        time.sleep(secs)
+        await asyncio.sleep(secs)
         global the_server
         #Send out appropriate message
         for chan in the_server.channels:
@@ -136,7 +136,7 @@ async def subscriptions():
            Found correct channel
            One user listed"""
         c.close()
-        time.sleep(120) #Prevents repeated calling
+        await asyncio.sleep(120) #Prevents repeated calling
 
 
 
