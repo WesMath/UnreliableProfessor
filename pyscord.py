@@ -15,6 +15,15 @@ import asyncio
 import multiprocessing as mp
 
 
+@asyncio.coroutine
+def my_background_task():
+    #yield from  bot.wait_until_ready()
+    #channel = discord.Object(id='345768341123891200')
+    while not client.is_closed:
+        #yield from client.send_message(channel, "I'm still alive!")
+        print("GOT HERE TO THE BACKGROUND, DAWG")
+        yield from asyncio.sleep(5)# task runs every hour
+
 class MyException(Exception):
     pass
 
@@ -41,28 +50,22 @@ global the_dates
 the_dates = ""
 global testing
 
-
-def worker():
-    print("worker reached")
-    #loop = asyncio.get_event_loop()
-    #loop.run_until_complete(subscriptions())
-
-""""@asyncio.coroutine    
+@asyncio.coroutine    
 async def subscriptions():
     while(True):
         #Sleep after checking time:
         now = datetime.datetime.now()
         desired = -1
         secs = 1
-        if now.hour >= 7 and now.hour < 19:
+        if now.hour >= 7 and now.hour < 20:
             desired = 1 #for ebook
-            t = datetime.timedelta(hours=15, minutes=15)
+            t = datetime.timedelta(hours=20)
             current = datetime.timedelta(hours=now.hour, minutes=now.minute)
             delta = t - current
             secs = delta.total_seconds()
             if secs < 0:
                 secs *= -1
-        elif now.hour >= 19 or now.hour < 7:
+        elif now.hour >= 20 or now.hour < 7:
             desired = 0 #for poem
             t = datetime.timedelta(hours=7)
             current = datetime.timedelta(hours=now.hour, minutes=now.minute)
@@ -74,6 +77,7 @@ async def subscriptions():
             print("Never should reach here")
         print("Ready to sleep for {} seconds.".format(secs))
         time.sleep(secs)
+        global the_server
         #Send out appropriate message
         for chan in the_server.channels:
             #print(chan.name)
@@ -120,19 +124,19 @@ async def subscriptions():
             #31 days in a month to prevent overlap
             hashable = day.month*31 + day.day
             print(client)
-            client.send_message(testing,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
+            await client.send_message(testing,"The poem of the day is:\nhttp://www.bartleby.com/265/"+str((421*hashable)%424)+".html")
             #use coprimes to generate unique nums
             output = ""
             for person in da_people:
                 output += "<@"+person[0]+">, "
-            client.send_message(testing, output)
-        ""ValueError: sleep length must be non negative
+            await client.send_message(testing, output)
+        """ValueError: sleep length must be non negative
            Ready to sleep for 0.0 seconds
            Ready to sleep for -60.0 seconds
            Found correct channel
-           One user listed""
+           One user listed"""
         c.close()
-        time.sleep(120) #Prevents repeated calling"""
+        time.sleep(120) #Prevents repeated calling
 
 
 
@@ -145,6 +149,9 @@ async def on_ready():
     global the_server
     for serv in client.servers:
         the_server = serv
+
+    client.loop.create_task(subscriptions())
+    
     #print(serv)
     #subscriptions_thread().start()
     """sub_process = mp.Process(target=worker)
@@ -154,7 +161,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    now = datetime.datetime.now()
+    """now = datetime.datetime.now()
     want_resource = True
     if now.hour == 8 or now.hour == 20:
         search_term = ""
@@ -237,7 +244,7 @@ async def on_message(message):
             for person in da_people:
                 output += "<@" + person[0] + ">, "
             await client.send_message(testing, output)
-        c.close()
+        c.close()"""
     meant_for_bot = False
     #if message.channel.is_private is False:
     for user in message.mentions:
@@ -255,7 +262,7 @@ async def on_message(message):
         return
 	#print("Message: " + message.content)
     #print("Got here")
-    if contains(message.content, "sneakyOBSOLETE2"):#So I can run 2 versions at once and only have one reply to me
+    if contains(message.content, "sneaky"):#So I can run 2 versions at once and only have one reply to me
         return
     if not correct_channel:
         await client.send_message(message.channel, "Please confine all bot interaction to #bot_spam, #bot_testing, or private direct messages to the bot.")
@@ -415,11 +422,11 @@ It's Raining Men! Hallelujah!"""
             resourceCount += 1
         await client.send_message(message.channel, output)
     elif contains(message.content, "help"):
-        await client.send_message(message.channel, "Hi! I'm a horrible mistake. I do parlor tricks and ebook searches.")
+        await client.send_message(message.channel, "Hi! I'm a horrible mistake. I do parlor tricks and ebook searches. Mention me and type usage for a list of commands.")
     elif contains(message.content, "author"):
-        await client.send_message(message.channel, "<@310860026816233473> maintains me. Sometimes. When he's in a good mood.")
+        await client.send_message(message.channel, "<@310860026816233473> maintains me. Sometimes. If the weather permits.")
     elif contains(message.content, "source"):
-        await client.send_message(message.channel, "My source code is not stored in a Github repo (yet), so PM <@310860026816233473> for details or code samples.")
+        await client.send_message(message.channel, "You can read my source at https://github.com/WesMath/UnreliableProfessor\n<@310860026816233473>, someone is about to read our embarrassing code; you better stop them.")
     elif contains(message.content, "weather"):
         #insert Helsinki weather api
         key = open('weather_api.txt', 'r')#Read API key from text file in directory
@@ -504,12 +511,15 @@ def main_task(token):
 key = open('appkey.txt', 'r')#Read API key from text file in directory (which git ignores)
 thekey = key.read()
 key.close()
-#client.run(thekey)#Initialize a connection using application token
-loop = asyncio.get_event_loop()
+
+
+
+client.run(thekey)#Initialize a connection using application token
+"""loop = asyncio.get_event_loop()
 try:
     loop.run_until_complete(main_task(thekey))
 except:
     loop.run_until_complete(client.logout())
 finally:
-    loop.close()
+    loop.close()"""
 print("Finished completely.")
